@@ -17,9 +17,10 @@ justify and recreate its toolchain.
 | Git (Windows) | 2.55.0.windows.5 |
 | Python (Windows) | 3.14.7 |
 
-> **Resource caveat.** The host has only ~8 GB RAM. WSL2 currently sees 3.7 GiB.
-> Large, fully unrolled SHA-256 variants (tens of thousands of instances) may be
-> slow or OOM during placement/routing. Mitigations are listed in §6. Free disk
+> **Resource caveat.** The host has only ~8 GB RAM. WSL2 sees 5.8 GiB of it
+> (raised from the 3.7 GiB default via `.wslconfig`, §2/§7). Large, fully
+> unrolled SHA-256 variants (tens of thousands of instances) may still be slow
+> or OOM during placement/routing. Mitigations are listed in §6. Free disk
 > (~31 GB on `C:`; the WSL virtual disk grows on `C:`) is sufficient but must be
 > monitored.
 
@@ -30,9 +31,9 @@ justify and recreate its toolchain.
 | Distro | Ubuntu 26.04.1 LTS (default, WSL version 2) |
 | Kernel | 6.18.40.1-microsoft-standard-WSL2 |
 | CPUs visible | 8 |
-| Memory visible | 3.7 GiB total, 1.0 GiB swap |
+| Memory visible | 5.8 GiB total (limit `memory=6GB`) |
 | Linux home | `/home/userchimbuchi` |
-| `.wslconfig` | none present |
+| `.wslconfig` | `C:\Users\USER\.wslconfig` with `[wsl2] memory=6GB swap=8GB processors=8` (applied 2026-10-09) |
 
 ## 3. RTL-to-GDS toolchain — LibreLane devshell AppImage
 
@@ -123,7 +124,7 @@ The remaining Phase 0 gap is only the SHA-256 design itself (Phase 1/2).
 
 | Risk | Mitigation |
 |---|---|
-| 3.7 GiB WSL RAM may OOM large unrolled variants | Add `%UserProfile%\.wslconfig` with `[wsl2] memory=6GB swap=8GB`, `wsl --shutdown`, retry. Cap the largest variant at `UNROLL=16` pipelined rather than full 64-unroll. |
+| 3.7 GiB WSL RAM may OOM large unrolled variants | **DONE — applied.** `%UserProfile%\.wslconfig` sets `memory=6GB, swap=8GB, processors=8`; verified `free` shows 5.8 GiB after `wsl --shutdown`. If even this is insufficient, cap the largest variant at `UNROLL=16` pipelined rather than full 64-unroll. |
 | `C:` free space (~31 GB) shared with the growing WSL VHD | Keep only `final/` artifacts + metrics per run; delete intermediate `runs/*` step dirs after each capture. |
 | `/mnt/c` (DrvFs) is slow/risky for EDA I/O | Keep the canonical repo on `C:`, but run flows from a WSL-native scratch dir (e.g. `~/hashpareto_run`), copying RTL in and `final/` + metrics out. |
 | Devshell ANSI noise obscures logs | Parse LibreLane's own log files and `metrics.json` rather than stdout. |
@@ -137,4 +138,6 @@ The remaining Phase 0 gap is only the SHA-256 design itself (Phase 1/2).
 - [x] End-to-end SKY130 flow proven on this host (UART run)
 - [x] Non-interactive invocation wrapper committed (`tools/run_librelane.sh`)
 - [x] Repo skeleton, `LICENSE` (Apache-2.0), `NOTICE`, reference RTL vendored
-- [ ] `.wslconfig` memory bump (recommended before Phase 2 heavy runs)
+- [x] `.wslconfig` memory bump applied and verified (5.8 GiB visible)
+- [x] Git repository initialized; Phase 0 committed (commit `1272ae9`)
+- [x] NIST SHA-256 vectors added under `data/vectors/` (hashlib-verified)

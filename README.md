@@ -16,6 +16,7 @@ cycle).
 | Phase | Description | State |
 |------:|-------------|-------|
 | 0 | Environment + repo bring-up | **complete** (see `docs/phase0_environment.md`) |
+| 0.5 | Residuals close-out: git init + commit, `.wslconfig` memory bump, NIST vectors | **complete** |
 | 1 | Parameterized RTL generator (`UNROLL`, `PIPE_STAGES`) + verification | not started |
 | 2 | SKY130 LibreLane hardening of all variants | not started |
 | 3 | PPA + energy/Pareto analysis | not started |
