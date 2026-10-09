@@ -1,0 +1,23 @@
+# LibreLane / OpenLane run outputs (large; regenerate from flow configs)
+flow/runs/
+**/runs/
+**/tmp/
+*.odb
+*.def
+
+# Python
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+venv/
+.venv/
+
+# Simulator artifacts beyond committed vectors
+*.fst
+*.vvp
+*.vcd
+
+# OS noise
+.DS_Store
+Thumbs.db
+desktop.ini
