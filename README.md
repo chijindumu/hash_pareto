@@ -13,15 +13,20 @@ cycle).
 
 ## Status
 
-| Phase | Description | State |
-|------:|-------------|-------|
-| 0 | Environment + repo bring-up | **complete** (see `docs/phase0_environment.md`) |
-| 0.5 | Residuals close-out: git init + commit, `.wslconfig` memory bump, NIST vectors | **complete** |
-| 1 | Parameterized RTL generator (`UNROLL`, `PIPE_STAGES`) + verification | not started |
-| 2 | SKY130 LibreLane hardening of all variants | not started |
-| 3 | PPA + energy/Pareto analysis | not started |
-| 4 | Notebook assembly + reproducibility | not started |
-| 5 | Submission (fork + PR to `sscs-ose`) | not started |
+> Full phase-by-phase checklist with artifacts and step counts:
+> **`docs/PROJECT_STATUS.md`** (updated 2026-10-13).
+
+| Phase | Name | State | Steps left |
+|------:|------|-------|:----------:|
+| 0 + 0.5 | Environment, repo bring-up, residuals | ✅ complete | 0 |
+| 1 | Parameterized RTL generator (`UNROLL`) + bit-exact verification | ✅ complete | 0 |
+| 2 | SKY130 LibreLane hardening + PPA metrics | 🔄 in progress | 7 tasks / 4 runs |
+| 3 | Energy + Pareto analysis | ⬜ | 5 |
+| 4 | Notebook + reproducibility | ⬜ | 4 |
+| 5 | Submission (PR to `sscs-ose`) | ⬜ | 4 |
+
+Overall ≈ **45–55 %** (phases 0–1 done; the Phase 2 grid is running now:
+U16@300 ns first, then U1/U2/U4/U8@100 ns — log `flow/grid.out.log`).
 
 ## Repository layout
 
@@ -31,17 +36,19 @@ cycle).
 |-- NOTICE                      third-party attribution
 |-- README.md
 |-- docs/
-|   `-- phase0_environment.md   exact toolchain, hashes, reproduction steps
+|   |-- phase0_environment.md   exact toolchain, hashes, reproduction steps
+|   |-- phase1_verification.md  bit-exact verification results (25/25 PASS)
+|   `-- PROJECT_STATUS.md       what's done / running / left, per phase
 |-- rtl/
 |   |-- original/               vendored nano_hash reference RTL + testbenches
-|   `-- generated/              parameter-generated variants (Phase 1)
+|   `-- generated/              parameterized core + top (Phase 1)
+|-- verif/
+|   `-- cocotb/                 cocotb+Verilator golden-hash test harness
 |-- flow/
-|   |-- configs/                LibreLane YAML configs (Phase 2)
-|   `-- runs/                   hardened-run outputs (gitignored)
-|-- tools/
-|   |-- run_librelane.sh        invoke LibreLane inside the devshell AppImage
-|   |-- phase0_probe.sh         environment probe
-|   `-- phase0_versions.sh      toolchain version capture
+|   |-- variants/u<U>/          per-unroll::{src, config.yaml, runs/}
+|   `-- grid logs               grid.out.log / grid.err.log (Phase 2)
+|-- tools/                      gen/run/slim/metrics helpers (Phase 1-2)
+|-- results/                    collected PPA metrics.csv (Phase 2-3)
 |-- notebook/                   the Code-a-Chip submission notebook (Phase 4)
 `-- data/
     `-- vectors/                NIST SHA-256 test vectors

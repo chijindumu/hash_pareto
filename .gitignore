@@ -16,6 +16,7 @@ venv/
 *.fst
 *.vvp
 *.vcd
+obj_dir/
 
 # OS noise
 .DS_Store
