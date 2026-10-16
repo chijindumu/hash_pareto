@@ -3,30 +3,68 @@
 **A reproducible, notebook-driven design-space explorer for an open-source SHA-256 core.**
 
 HashPareto takes a verified SystemVerilog SHA-256 core, generates a family of
-architectural variants (round-unrolling and multi-block pipelining), hardens each
-one through the open-source LibreLane RTL-to-GDS flow on the SkyWater SKY130 PDK,
-and reports which variant is best for **throughput**, **area**, and **energy per
-hash** — with a Pareto analysis that explains *why*.
+architectural variants (round-unrolling), hardens each one through the
+open-source LibreLane RTL-to-GDS flow on the SkyWater SKY130 PDK, and reports
+which variant is best for **throughput**, **area**, and **energy per hash** —
+with a Pareto analysis that explains *why*.
 
 Target: IEEE SSCS **Code-a-Chip** travel-grant notebook submission (ISSCC 2027
-cycle).
+cycle). Deadline: **2026-10-31**.
+
+## Results at a glance
+
+4 of 5 variants hardened end-to-end (DRC/LVS/antenna clean, setup WNS = 0):
+
+| UNROLL | Area (µm²) | Throughput (Mhash/s) | Energy/hash (nJ) | Power (mW) | Clock |
+|-------:|-----------:|---------------------:|-----------------:|-----------:|------:|
+| 1 | 176 750 | 0.156 | 16.18 | 2.53 | 100 ns |
+| 2 | 197 497 | 0.313 | 8.21 | 2.57 | 100 ns |
+| 4 | 243 908 | 0.625 | 4.18 | 2.61 | 100 ns |
+| 16 | 524 671 | 0.833 | 1.10 | 0.92 | 300 ns |
+
+**Takeaway:** unroll to 4 for the best area-energy tradeoff (4× lower energy
+than U1 for only +38 % area); unroll to 16 if absolute energy matters more
+than area. Functional verification: **25/25 PASS** (5 variants × 5 cocotb
+suites vs `hashlib.sha256`).
+
+Full story in **`notebook/hashpareto.ipynb`** (the submission deliverable).
 
 ## Status
 
-> Full phase-by-phase checklist with artifacts and step counts:
-> **`docs/PROJECT_STATUS.md`** (updated 2026-10-13).
+> Phase-by-phase checklist with artifacts and step counts:
+> **`docs/PROJECT_STATUS.md`** (updated 2026-10-16).
 
-| Phase | Name | State | Steps left |
-|------:|------|-------|:----------:|
-| 0 + 0.5 | Environment, repo bring-up, residuals | ✅ complete | 0 |
-| 1 | Parameterized RTL generator (`UNROLL`) + bit-exact verification | ✅ complete | 0 |
-| 2 | SKY130 LibreLane hardening + PPA metrics | 🔄 in progress | 7 tasks / 4 runs |
-| 3 | Energy + Pareto analysis | ⬜ | 5 |
-| 4 | Notebook + reproducibility | ⬜ | 4 |
-| 5 | Submission (PR to `sscs-ose`) | ⬜ | 4 |
+| Phase | Name | State |
+|------:|------|-------|
+| 0 + 0.5 | Environment, repo bring-up, residuals | ✅ complete |
+| 1 | Parameterized RTL generator (`UNROLL`) + bit-exact verification | ✅ complete (25/25 PASS) |
+| 2 | SKY130 LibreLane hardening + PPA metrics | ✅ complete (4/5 variants; U8 blocked by congestion) |
+| 3 | Energy + Pareto analysis | ✅ complete (4 points) |
+| 4 | Notebook + reproducibility | ✅ complete (self-contained, outputs pre-rendered) |
+| 5 | Submission (PR to `sscs-ose`) | 🔄 package built → PR pending |
 
-Overall ≈ **45–55 %** (phases 0–1 done; the Phase 2 grid is running now:
-U16@300 ns first, then U1/U2/U4/U8@100 ns — log `flow/grid.out.log`).
+Overall ≈ **90 %**. The submission package is built and verified.
+
+## Submission package
+
+`submission/ISSCC27/submitted_notebooks/hashpareto/` (4.1 MB) is the exact
+tree to push for the Code-a-Chip PR. It is **self-contained**: the notebook
+runs using only its committed `data/` (metrics CSVs + GDS layout renders) —
+the multi-GB `flow/runs/` artifacts stay local and are regenerable. Verified
+to execute standalone with 0 errors.
+
+To submit (deadline **2026-10-31, 11:59 AM Pacific**):
+
+1. Fork `sscs-ose/sscs-ose-code-a-chip.github.io`.
+2. Copy `submission/ISSCC27/submitted_notebooks/hashpareto/` → fork's
+   `ISSCC27/submitted_notebooks/hashpareto/` (touch nothing outside it).
+3. Open the PR.
+
+Known limitations (reported in the notebook, not hidden):
+- **U8 (UNROLL = 8 @ 100 ns)** failed at OpenROAD global routing (`GRT-0116`,
+  congestion); the 4-point set still demonstrates the tradeoff.
+- **U16 runs at 300 ns**, not 100 ns: its 16-round combinational path cannot
+  close timing at 100 ns (pre-CTS critical path alone was 132 ns).
 
 ## Repository layout
 
@@ -36,36 +74,52 @@ U16@300 ns first, then U1/U2/U4/U8@100 ns — log `flow/grid.out.log`).
 |-- NOTICE                      third-party attribution
 |-- README.md
 |-- docs/
-|   |-- phase0_environment.md   exact toolchain, hashes, reproduction steps
+|   |-- phase0_environment.md   exact toolchain versions + hashes
 |   |-- phase1_verification.md  bit-exact verification results (25/25 PASS)
-|   `-- PROJECT_STATUS.md       what's done / running / left, per phase
+|   `-- PROJECT_STATUS.md       what's done / left, per phase
 |-- rtl/
-|   |-- original/               vendored nano_hash reference RTL + testbenches
-|   `-- generated/              parameterized core + top (Phase 1)
+|   |-- original/               vendored nano_hash reference RTL (untouched)
+|   `-- generated/              parameterized core + top (UNROLL parameter)
 |-- verif/
 |   `-- cocotb/                 cocotb+Verilator golden-hash test harness
 |-- flow/
-|   |-- variants/u<U>/          per-unroll::{src, config.yaml, runs/}
-|   `-- grid logs               grid.out.log / grid.err.log (Phase 2)
-|-- tools/                      gen/run/slim/metrics helpers (Phase 1-2)
-|-- results/                    collected PPA metrics.csv (Phase 2-3)
-|-- notebook/                   the Code-a-Chip submission notebook (Phase 4)
+|   |-- variants/u<U>/          per-unroll: src/, config.yaml, runs/
+|   `-- runs/cocotb_u<U>/       simulation build + results per variant
+|-- tools/                      gen / run / slim / metrics / plots helpers
+|-- results/
+|   |-- metrics.csv             harvested PPA metrics (one row per run)
+|   |-- pareto.csv              derived throughput + energy per hash
+|   `-- pareto_*.png            Pareto charts
+|-- notebook/
+|   `-- hashpareto.ipynb        the Code-a-Chip submission notebook
 `-- data/
     `-- vectors/                NIST SHA-256 test vectors
 ```
 
-## Environment (summary)
+## Reproduce in three commands
 
-The RTL-to-GDS flow runs under **WSL2 (Ubuntu 26.04)** on Windows 11, using the
-**LibreLane v3.0.16** devshell AppImage (a Nix shell bundling Yosys, OpenROAD,
-Magic, Netgen, KLayout, Verilator). The **SkyWater SKY130A/B** PDK is installed
-via CIEL. No Docker is required. Full details and hashes: `docs/phase0_environment.md`.
-
-Run a command in the flow, non-interactively:
+Assumes the one-time environment setup from `docs/phase0_environment.md`
+(WSL2 + LibreLane devshell AppImage + SKY130 via CIEL + `~/venv`) is done.
 
 ```bash
-tools/run_librelane.sh 'librelane --version'
+# 1. Verify the RTL is bit-exact (~2 min)
+for u in 1 2 4 8 16; do ~/venv/bin/python verif/cocotb/run.py --sim verilator --unroll $u; done
+
+# 2. Harden one variant (~30-45 min)
+tools/run_variant.sh 2 test_u2
+
+# 3. Harvest metrics + regenerate plots
+~/venv/bin/python tools/collect_metrics.py
+~/venv/bin/python tools/make_plots.py
 ```
+
+## Environment (summary)
+
+The RTL-to-GDS flow runs under **WSL2 (Ubuntu 26.04)** on Windows 11, using
+**LibreLane v3.0.16** (devshell AppImage: Yosys 0.62, OpenROAD, Magic 8.3.623,
+Netgen 1.5.316, KLayout 0.30.7, Verilator 5.044). The **SKY130A/B** PDK is
+installed via CIEL. No Docker required. Full versions and hashes:
+`docs/phase0_environment.md`.
 
 ## License
 

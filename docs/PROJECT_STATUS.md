@@ -16,13 +16,15 @@ what remains. Read-me-first summary in `README.md`.
 |------:|------|-------|:----------:|
 | 0 + 0.5 | Environment, repo bring-up, residuals | ✅ complete | **0** |
 | 1 | Parameterized RTL + bit-exact verification | ✅ complete | **0** |
-| 2 | SKY130 LibreLane grid + PPA metrics | 🔄 4/5 variants (U8 blocked) | **0 for the subset** |
+| 2 | SKY130 LibreLane grid + PPA metrics | ✅ complete (4/5; U8 documented) | **0** |
 | 3 | Energy + Pareto analysis | ✅ complete (4 points) | **0** |
-| 4 | Notebook + reproducibility | ✅ complete (draft) | **0** |
-| 5 | Submission (PR to `sscs-ose`) | ⬜ todo | **4** |
+| 4 | Notebook + reproducibility | ✅ complete | **0** |
+| 5 | Submission (PR to `sscs-ose`) | 🔄 package built → PR pending | **3** |
 
-**Overall ≈ 85–90 % done** (phases 0–4 complete for the 4-variant subset;
-phase 5 submission remains; deadline **2026-10-31**).
+**Overall ≈ 90 % done.** The submission package
+(`submission/ISSCC27/submitted_notebooks/hashpareto/`, 4.1 MB) is built and
+verified — it runs standalone with only its committed `data/`. Remaining:
+rubric audit, fork + copy + PR, deadline **2026-10-31**.
 
 ---
 
@@ -120,25 +122,51 @@ and the chosen hybrid clocking for U16).
 
 ## Phase 4 — Notebook + reproducibility ✅ (draft)
 
-- `notebook/hashpareto.ipynb` created: env pins, verification summary,
-  metrics/Pareto tables, plots, U8 caveat, hybrid-clock rationale.
+- `notebook/hashpareto.ipynb` rewritten (10/16): full narrative — env pins,
+  RTL explanation, verification table, flow + clocking strategy, derived
+  metrics + both Pareto charts (regenerated in-notebook), observations,
+  limitations (U8/U16/STA power caveats), reproduce guide. Builder:
+  `tools/build_notebook.py`; validator: `tools/verify_notebook.sh` (executes
+  all code cells in the pinned venv — passes).
 - `tools/collect_metrics.py`, `tools/slim_run.sh`, `tools/run_variant.sh`,
-  `tools/run_grid.sh` make the flow rerunnable (fixed run tags, pinned env).
+  `tools/run_grid.sh`, `tools/make_plots.py` make the flow rerunnable
+  (fixed run tags, pinned env). `make_plots.py` replaces the throwaway
+  `/tmp` heredoc and fixes the energy-label bug (per-row annotation).
+- `README.md` rewritten (10/16): results-at-a-glance table, current phase
+  states, known limitations, 3-command reproduce guide.
 
-Optional polish (not blocking): clean-room rerun on a fresh clone; fix the
-energy-plot label y-position (currently uses the column, not per-row value).
+### Self-contained notebook + submission package (10/16)
+The notebook no longer depends on `flow/runs/` (2.1 GB, gitignored). It
+locates its data by searching CWD + parents for `data/` (submission) or
+`results/` (dev repo), so it runs identically in both layouts.
+
+- **Layout renders:** `tools/render_layout.sh` + `tools/render_gds.rb` use
+  KLayout (inside the devshell) to turn each hardened GDS into a small PNG →
+  `results/layouts/u{1,2,4,16}.png` (340–460 KB each). Copied into the
+  package as `data/layouts/`.
+- **Notebook re-executed** with `jupyter nbconvert --execute` so GitHub shows
+  all plots/tables/images without the reviewer running anything. Energy
+  cross-check vs committed `pareto.csv`: **0.000 % deviation**.
+- **Package:** `submission/ISSCC27/submitted_notebooks/hashpareto/` (4.1 MB)
+  = notebook + `data/` + `rtl/` + `verif/` + `flow/` (configs+src only) +
+  `tools/` + `docs/` + LICENSE/NOTICE/README. **Verified to execute standalone
+  inside the package** (0 errors, 6 embedded images, resolves `data/`).
 
 ---
 
-## Phase 5 — Submission ⬜ (4 steps)
+## Phase 5 — Submission 🔄 (3 steps left)
+
+Package is built; what remains is the PR mechanics:
 
 1. Re-verify license/compliance: Apache-2.0 for our work, `NOTICE` for vendored
-   `nano_hash` + PDK/tool attributions.
+   `nano_hash` + PDK/tool attributions. *(NOTICE present in package — re-read
+   before submitting.)*
 2. Audit against the Code-a-Chip rubric (reproducibility, clarity,
-   open-sourcing, originality).
-3. Push `hash_pareto` repo public (GitHub).
-4. Open PR to `sscs-ose/sscs-ose-code-a-chip.github.io` under
-   `ISSCC27/submitted_notebooks/<name>/` (deadline **2026-10-31**).
+   open-sourcing, originality) + read `howtoapply.md` in the target repo.
+3. **Submit:** fork `sscs-ose/sscs-ose-code-a-chip.github.io` → copy
+   `submission/ISSCC27/submitted_notebooks/hashpareto/` into
+   `ISSCC27/submitted_notebooks/hashpareto/` in the fork → PR before
+   **2026-10-31 11:59 AM Pacific**. Do not touch files outside that dir.
 
 ---
 
@@ -151,7 +179,10 @@ energy-plot label y-position (currently uses the column, not per-row value).
 - Obsolete Oct-10 parallel-attempt artifacts were **deleted** earlier
   (user-approved): split-core `rtl/generated/vN_*`, `flow/verify`,
   `flow/runs/verify`, stray `waveform.vcd`.
-- Throwaway `tools/` scripts still to clean before submission:
-  `resume_u1.sh`, `inspect_run.sh`, `show_metrics.sh`, `show_timing.sh`,
-  `yosys_probe*.sh`, `_state_check.sh`, `_du_probe.sh`, `_metrics_probe.sh`
-  (if present).
+- Throwaway probe scripts **removed** (10/16): `resume_u1.sh`,
+  `inspect_run.sh`, `show_metrics.sh`, `show_timing.sh`, `yosys_probe*.sh`,
+  `_state_check.sh`, `_du_probe.sh`, `_metrics_probe.sh`, `poll_run.sh`,
+  plus junk `notebook/hashpareto_{final,summary}.ipynb`. `tools/` now holds
+  only the scripts the docs reference.
+- The `submission/` package is a **copy** — after editing any source file
+  (RTL/docs/notebook), re-copy it into the package before opening the PR.
