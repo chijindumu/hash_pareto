@@ -157,3 +157,5 @@ Deliverable when done: one clean run per variant (`final/gds/sha_top.gds` +
   the split-core `rtl/generated/vN_*` set, `flow/verify`, `flow/runs/verify`,
   stray `waveform.vcd`.
 - Disk: keep `tools/slim_run.sh` in the loop after every completed run.
+## U8 note (10/16/2026)
+U8 (grid100) failed at OpenROAD Global Routing with GRT-0116 (congestion) after reaching step 42. Attempts to resume from GlobalRouting did not complete. Given time and disk, results are reported for U1,U2,U4,U16 (4 usable Pareto points). The partial set still demonstrates the unrolling tradeoff (area increases, energy/hash drops, throughput scales sublinearly at very high unroll due to longer critical paths and the chosen hybrid clocking for U16).
