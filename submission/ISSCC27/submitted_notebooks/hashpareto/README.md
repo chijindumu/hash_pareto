@@ -2,6 +2,8 @@
 
 **IEEE SSCS Code-a-Chip travel-grant submission · ISSCC 2027 cycle**
 
+**Author:** Benjamin Joshua Chimbuchi
+
 Start here: **[`hashpareto.ipynb`](hashpareto.ipynb)** — the complete notebook
 (design → verification → hardening → Pareto analysis → limitations → reproduce).
 

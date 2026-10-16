@@ -15,15 +15,23 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "notebook", "hashpareto.ipynb")
 
 
+_id = [0]
+
+
+def _next_id():
+    _id[0] += 1
+    return f"hp-cell-{_id[0]:02d}"
+
+
 def md(*lines):
     src = [l + "\n" for l in lines[:-1]] + [lines[-1]]
-    return {"cell_type": "markdown", "metadata": {}, "source": src}
+    return {"cell_type": "markdown", "id": _next_id(), "metadata": {}, "source": src}
 
 
 def code(*lines):
     src = [l + "\n" for l in lines[:-1]] + [lines[-1]]
-    return {"cell_type": "code", "execution_count": None, "metadata": {},
-            "outputs": [], "source": src}
+    return {"cell_type": "code", "id": _next_id(), "execution_count": None,
+            "metadata": {}, "outputs": [], "source": src}
 
 
 cells = [
@@ -32,6 +40,8 @@ cells = [
         "# HashPareto — a notebook-driven PPA explorer for an open SHA-256 core",
         "",
         "**IEEE SSCS Code-a-Chip travel-grant submission · ISSCC 2027 cycle**",
+        "",
+        "**Author:** Benjamin Joshua Chimbuchi",
         "",
         "This notebook documents *HashPareto*: taking a verified SystemVerilog",
         "SHA-256 core, generating a family of architectural variants by",
@@ -56,12 +66,14 @@ cells = [
         "| **Hardened** | 4 of 5 variants (U8 blocked by routing congestion — see §7) |",
         "| **Verified** | 25/25 cocotb tests bit-exact vs `hashlib.sha256` |",
         "",
-        "**How to read this notebook.** §1–§4 explain the design, verification,",
-        "and the physical flow. §5–§6 load the measured data and draw the Pareto",
+        "**How to read this notebook.** §1 gives the environment and the exact",
+        "tool versions to use. §2–§4 explain the design, verification, and the",
+        "physical flow. §5–§6 load the measured data and draw the Pareto",
         "conclusions — these cells run anywhere with `pandas` + `matplotlib` and",
         "use only the small `data/` files committed alongside this notebook (the",
         "multi-GB `flow/runs/` artifacts stay on the author's machine and are",
-        "regenerable). §7 lists limitations; §8 is the reproduce-from-scratch guide.",
+        "regenerable). §7 lists limitations; §8 is the reproduce-from-scratch",
+        "guide; §9 lists reused work and references.",
     ),
     # ------------------------------------------------------------------ env
     md(
@@ -76,6 +88,26 @@ cells = [
         "A Python virtualenv (`~/venv`) carries cocotb, pandas, matplotlib, and",
         "Jupyter. All commands are plain shell; from Windows prefix with",
         "`wsl -d Ubuntu-26.04 -- bash -lc \"...\"`.",
+        "",
+        "**Recommended tool versions.** These are the exact versions this notebook",
+        "was produced and last verified with; anything close should work, but pin",
+        "these for bit-identical knockout logs:",
+        "",
+        "| Tool | Version | Role | License |",
+        "|------|---------|------|---------|",
+        "| Ubuntu (WSL2) | 26.04.1 LTS | host OS | — |",
+        "| Python (venv) | 3.14.4 | notebook kernel | PSF |",
+        "| JupyterLab | 4.6.4 | notebook runtime | BSD-3 |",
+        "| LibreLane | 3.0.16 (devshell AppImage) | RTL→GDS flow | Apache-2.0 |",
+        "| Yosys | 0.62 | synthesis | ISC |",
+        "| OpenROAD | 1.0 (LibreLane-pinned) | PnR + STA | Apache-2.0 |",
+        "| Magic | 8.3.623 | DRC / ext | MIT-style |",
+        "| Netgen | 1.5.316 | LVS | MIT-style |",
+        "| KLayout | 0.30.7 | GDS view / PNG render | GPL-3.0 |",
+        "| Verilator | 5.044 | RTL simulation | LGPL-3 / Artistic-2 |",
+        "| cocotb | 2.1.0 | testbench framework | BSD-3 |",
+        "| pandas / matplotlib | 3.0.6 / 3.11.2 | analysis + plots | BSD-3 / PSF |",
+        "| SKY130 PDK | sky130A (CIEL, 2024-ish) | process | Apache-2.0 |",
     ),
     # ------------------------------------------------------------------ design
     md(
@@ -347,10 +379,11 @@ cells = [
         "",
         "**Remaining work (tracked in `docs/PROJECT_STATUS.md`, phase 5):**",
         "",
-        "1. Audit against the Code-a-Chip rubric; finalize `NOTICE` attributions.",
-        "2. Push this repo public on GitHub after a clean rerun.",
-        "3. Open the PR to `sscs-ose/sscs-ose-code-a-chip.github.io` under",
-        "   `ISSCC27/submitted_notebooks/hashpareto/` before **2026-10-31**.",
+        "1. License/compliance and rubric audit — **done** (Apache-2.0 `LICENSE`,",
+        "   `NOTICE` attribution, References in §9, tool versions in §1).",
+        "2. Fork `sscs-ose/sscs-ose-code-a-chip.github.io`, copy this project",
+        "   directory to `ISSCC27/submitted_notebooks/hashpareto/`, open the PR",
+        "   before **2026-10-31, 11:59 AM Pacific**.",
         "",
         "Optional engineering extensions (not required for submission): pipeline U16's",
         "critical path so it can run at 100 ns; retry U8 with a larger core area /",
@@ -388,6 +421,40 @@ cells = [
         "",
         "**License:** Apache-2.0 (see `LICENSE` and `NOTICE`). The original `nano_hash`",
         "core is also Apache-2.0, vendored unchanged under `rtl/original/`.",
+    ),
+    # ------------------------------------------------------------------ refs
+    md(
+        "## 9. References & reused work",
+        "",
+        "**Reused designs / modules (attributed in `NOTICE`):**",
+        "",
+        "- `nano_hash` — the reference SHA-256 core and its testbenches, vendored",
+        "  read-only under `rtl/original/` (Apache-2.0).",
+        "  <https://github.com/chijindumu/nano_hash>",
+        "",
+        "**Tool and PDK projects (the whole flow is open source):**",
+        "",
+        "- LibreLane RTL-to-GDS flow (Apache-2.0) — <https://github.com/librelane/librelane>",
+        "- OpenLane 2 (Apache-2.0) — <https://github.com/efabless/openlane2>",
+        "- Yosys (ISC) — <https://github.com/YosysHQ/yosys>",
+        "- OpenROAD (Apache-2.0) — <https://github.com/The-OpenROAD-Project/OpenROAD>",
+        "- Magic VLSI and Netgen — <http://opencircuitdesign.com/>",
+        "- KLayout (GPL-3.0) — <https://www.klayout.de/>",
+        "- Verilator and cocotb — <https://verilator.org/>, <https://www.cocotb.org/>",
+        "- SkyWater SKY130 PDK (Apache-2.0) — <https://github.com/google/skywater-pdk>",
+        "",
+        "**Standards / algorithms:**",
+        "",
+        "- NIST FIPS 180-4, *Secure Hash Standard* (SHA-256 definition and the test",
+        "  vectors mirrored in `data/vectors/`).",
+        "",
+        "**Notebooks reviewed for form (not code-reused):**",
+        "",
+        "- Code-a-Chip prior winners in `ISSCC26/`, `VLSI26/`, `VLSI25/` of",
+        "  `sscs-ose/sscs-ose-code-a-chip.github.io`.",
+        "- OpenFASOC temperature-sensor generator notebook and the",
+        "  Google `digital-inverter-openlane` guide — cited by the program as",
+        "  reference formats for reproducible open-PDK notebooks.",
         "",
         "---",
         "",

@@ -19,12 +19,13 @@ what remains. Read-me-first summary in `README.md`.
 | 2 | SKY130 LibreLane grid + PPA metrics | ✅ complete (4/5; U8 documented) | **0** |
 | 3 | Energy + Pareto analysis | ✅ complete (4 points) | **0** |
 | 4 | Notebook + reproducibility | ✅ complete | **0** |
-| 5 | Submission (PR to `sscs-ose`) | 🔄 package built → PR pending | **3** |
+| 5 | Submission (PR to `sscs-ose`) | 🔄 audited → PR pending | **1** |
 
-**Overall ≈ 90 % done.** The submission package
-(`submission/ISSCC27/submitted_notebooks/hashpareto/`, 4.1 MB) is built and
-verified — it runs standalone with only its committed `data/`. Remaining:
-rubric audit, fork + copy + PR, deadline **2026-10-31**.
+**Overall ≈ 95 % done.** The submission package
+(`submission/ISSCC27/submitted_notebooks/hashpareto/`, 4.1 MB) is built,
+audited against `howtoapply.md`, and verified — it runs standalone with only
+its committed `data/`. Remaining: fork + copy + open PR, deadline
+**2026-10-31, 11:59 AM Pacific**.
 
 ---
 
@@ -154,19 +155,33 @@ locates its data by searching CWD + parents for `data/` (submission) or
 
 ---
 
-## Phase 5 — Submission 🔄 (3 steps left)
+## Phase 5 — Submission 🔄 (1 step left)
 
-Package is built; what remains is the PR mechanics:
+**Rubric audit done (against `howtoapply.md`):**
 
-1. Re-verify license/compliance: Apache-2.0 for our work, `NOTICE` for vendored
-   `nano_hash` + PDK/tool attributions. *(NOTICE present in package — re-read
-   before submitting.)*
-2. Audit against the Code-a-Chip rubric (reproducibility, clarity,
-   open-sourcing, originality) + read `howtoapply.md` in the target repo.
-3. **Submit:** fork `sscs-ose/sscs-ose-code-a-chip.github.io` → copy
+| Requirement | Status |
+|-------------|--------|
+| Notebook in `ISSCC27/submitted_notebooks/<name>/` | ✅ package built |
+| Open-source license (Apache-2.0) | ✅ `LICENSE` in package |
+| Supporting files included | ✅ `data/`, `rtl/`, `verif/`, `tools/`, `flow/` configs |
+| Team members at top of notebook | ✅ **Author: Benjamin Joshua Chimbuchi** |
+| References (incl. reused notebooks) | ✅ notebook §9 |
+| Recommended tool versions | ✅ notebook §1 (+ `docs/phase0_environment.md`) |
+| Communicates ideas/decisions/methodology/results | ✅ notebook §1–§8 |
+| Reproducibility instructions | ✅ notebook §8 |
+| Layout image (encouraged) | ✅ 4 GDS→PNG renders in `data/layouts/` |
+| No files modified outside project dir | ✅ (PR step below) |
+
+**Remaining:**
+
+1. **Submit:** fork `sscs-ose/sscs-ose-code-a-chip.github.io` → copy
    `submission/ISSCC27/submitted_notebooks/hashpareto/` into
-   `ISSCC27/submitted_notebooks/hashpareto/` in the fork → PR before
-   **2026-10-31 11:59 AM Pacific**. Do not touch files outside that dir.
+   `ISSCC27/submitted_notebooks/hashpareto/` in the fork → open the PR before
+   **2026-10-31, 11:59 AM Pacific**. Do not modify any file outside that dir.
+   Then monitor the PR for reviewer questions.
+
+Optional (post-submission): push this repo public; with more compute, pipeline
+U16 to 100 ns and retry U8 with lower placement density.
 
 ---
 

@@ -41,9 +41,10 @@ Full story in **`notebook/hashpareto.ipynb`** (the submission deliverable).
 | 2 | SKY130 LibreLane hardening + PPA metrics | ✅ complete (4/5 variants; U8 blocked by congestion) |
 | 3 | Energy + Pareto analysis | ✅ complete (4 points) |
 | 4 | Notebook + reproducibility | ✅ complete (self-contained, outputs pre-rendered) |
-| 5 | Submission (PR to `sscs-ose`) | 🔄 package built → PR pending |
+| 5 | Submission (PR to `sscs-ose`) | 🔄 audited → PR pending |
 
-Overall ≈ **90 %**. The submission package is built and verified.
+Overall ≈ **95 %**. The submission package is built, audited against the
+Code-a-Chip `howtoapply.md`, and verified to run standalone.
 
 ## Submission package
 
@@ -58,7 +59,7 @@ To submit (deadline **2026-10-31, 11:59 AM Pacific**):
 1. Fork `sscs-ose/sscs-ose-code-a-chip.github.io`.
 2. Copy `submission/ISSCC27/submitted_notebooks/hashpareto/` → fork's
    `ISSCC27/submitted_notebooks/hashpareto/` (touch nothing outside it).
-3. Open the PR.
+3. Open the PR, then watch it for reviewer questions.
 
 Known limitations (reported in the notebook, not hidden):
 - **U8 (UNROLL = 8 @ 100 ns)** failed at OpenROAD global routing (`GRT-0116`,
