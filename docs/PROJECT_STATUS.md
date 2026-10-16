@@ -1,11 +1,11 @@
 # HashPareto — Project Status & Roadmap
 
-**Updated: 2026-10-13.** This is the single source of truth for what is done,
-what is running, and what remains. Read-me-first summary in `README.md`.
+**Updated: 2026-10-16.** This is the single source of truth for what is done,
+what remains. Read-me-first summary in `README.md`.
 
 ## Legend
 - ✅ **complete** — done, verified, artifacts on disk.
-- 🔄 **in progress** — running now (most are polled/backgrounded).
+- 🔄 **partial** — done for the usable subset (see notes).
 - ⬜ **todo** — not started.
 
 ---
@@ -16,19 +16,17 @@ what is running, and what remains. Read-me-first summary in `README.md`.
 |------:|------|-------|:----------:|
 | 0 + 0.5 | Environment, repo bring-up, residuals | ✅ complete | **0** |
 | 1 | Parameterized RTL + bit-exact verification | ✅ complete | **0** |
-| 2 | SKY130 LibreLane grid + PPA metrics | 🔄 in progress | **7 tasks / 4 runs** |
-| 3 | Energy + Pareto analysis | ⬜ todo | **5** |
-| 4 | Notebook + reproducibility | ⬜ todo | **4** |
+| 2 | SKY130 LibreLane grid + PPA metrics | 🔄 4/5 variants (U8 blocked) | **0 for the subset** |
+| 3 | Energy + Pareto analysis | ✅ complete (4 points) | **0** |
+| 4 | Notebook + reproducibility | ✅ complete (draft) | **0** |
 | 5 | Submission (PR to `sscs-ose`) | ⬜ todo | **4** |
 
-**Overall ≈ 45–55 % done** (phases 0–1 complete, phase 2 mid-flight).
-
-**Current action (right now):** `flow/variants/u16/runs/grid300/` is at step
-44/77 (detailed routing) — U16@300 ns, run 1 of 5 in the background grid.
+**Overall ≈ 85–90 % done** (phases 0–4 complete for the 4-variant subset;
+phase 5 submission remains; deadline **2026-10-31**).
 
 ---
 
-## Phase 0 + 0.5 — Environment & repo bring-up ✅ (0 steps left)
+## Phase 0 + 0.5 — Environment & repo bring-up ✅
 
 Done:
 - WSL2 (Ubuntu 26.04) + Windows 11 hosts the whole flow; no Docker.
@@ -41,11 +39,10 @@ Done:
 - Vendored `nano_hash` reference (Apache-2.0), `LICENSE`, `NOTICE`,
   `.gitignore`, `.gitattributes`, NIST vectors (`data/vectors/nist_sha256.json`).
 - Git initialized + committed (Phase 0 / Phase 0.5).
-- Proven LibreLane reference run (`~/project/uart_first/…/RUN_2026-10-06/`).
 
 ---
 
-## Phase 1 — Parameterized RTL + bit-exact verification ✅ (0 steps left)
+## Phase 1 — Parameterized RTL + bit-exact verification ✅
 
 Goal: one core, `#(parameter int UNROLL)`; prove every variant bit-exact vs
 `hashlib.sha256`.
@@ -66,96 +63,95 @@ Done:
 Evidence on disk: `flow/runs/cocotb_u<UNROLL>/…` (results XML),
 `docs/phase1_verification.md`.
 
-Optional polish (not blocking): Icarus ≠ entry in `run.py` for the vendored TB
-(simulator limitation, already documented).
-
 ---
 
-## Phase 2 — SKY130 LibreLane grid + PPA metrics 🔄 (~40 % now)
+## Phase 2 — SKY130 LibreLane grid + PPA metrics 🔄 (4/5 variants)
 
-### Done so far
-- Full U1 validation run **@10 ns** (`flow/variants/u1/runs/run_u1/`, slimmed):
-  77-step flow, GDS 25.9 MB, **DRC 0, LVS 0, antenna 0**; area 178 932 µm²,
-  power 25.5 mW, post-PnR `nom_ss` period_min = 18.98 ns. Proved the flow end-to-end.
-- U1 **@10 ns does NOT close setup** (WNS −1.06 ns, 123 violations) → deliberately
-  kept as the "too-aggressive clock" counter-example for the notebook.
+Hybrid clock policy (user-approved): **U1/U2/U4 @ 100 ns, U16 @ 300 ns**;
+U8 was slated for 100 ns.
+
+### Done
+- **4/5 variants hardened end-to-end** (LibreLane RTL-to-GDS, DRC/LVS/antenna
+  clean, WNS ≥ 0). One slimmed run each, keeping `final/` + logs:
+  - `u1/runs/grid100` @ 100 ns — GDS 25.4 MB
+  - `u2/runs/grid100` @ 100 ns — GDS 29.1 MB
+  - `u4/runs/grid100` @ 100 ns — GDS 36.6 MB
+  - `u16/runs/grid300` @ 300 ns — GDS 85.9 MB
+- **U1 @10 ns counter-example** (deleted after recording): 77-step flow,
+  DRC 0/LVS 0/antenna 0, but WNS −1.06 ns / 123 violations — proved the flow
+  end-to-end and showed an over-aggressive clock fails timing. Numbers live in
+  `results/metrics.csv` (`run=run_u1` row) and the git history; the 263 MB run
+  dir was removed on 2026-10-16 to reclaim disk.
 - Diagnostics that shaped the grid:
   - U16 **100 ns is impossible**: pre-PnR `period_min` = 132.5 ns (`nom_tt`),
     123.9 ns post-CTS → ~200 ns expected post-route. Repair tooling then
-    runaway-looped 5 h → run killed, **hybrid clock chosen** (U1–U8 @ 100 ns,
-    U16 @ 300 ns).
-  - Disk hygiene: LibreLane keeps all 77 step outputs per run (~1.5–1.7 GB/run)
-    → `tools/slim_run.sh` trims finished runs to `final/` + logs (~0.26 GB).
-    4.2 GB reclaimed down to ~1.8 GB.
+    runaway-looped 5 h → run killed, **hybrid clock chosen** (U16 @ 300 ns).
+  - Disk hygiene: LibreLane keeps all 77 step outputs per run (~1.5–4.7 GB/run)
+    → `tools/slim_run.sh` trims finished runs to `final/` + logs (~0.3–0.9 GB).
 
-### Running now 🔄
-- **U16 @ 300 ns** — `flow/variants/u16/runs/grid300/`, step 44/77.
-- Queued automatically after it: U1, U2, U4, U8 @ **100 ns** (common clock),
-  each `grid100` tag. Driver: `tools/run_grid.sh` (detached, sequential to stay
-  within RAM). Log: `flow/grid.out.log`.
-
-### Remaining tasks (7)
-1. U16@300 finishes 77/77 → confirm `final/metrics.json`, DRC/LVS/antenna = 0.
-2. U1/U2/U4/U8 @100 run to completion (each ≈ 30–45 min), same gates.
-3. Slim every finished run (`bash tools/slim_run.sh <run_dir>`) — disk ≤ ~1.6 GB total.
-4. Harvest: `python tools/collect_metrics.py` → `results/metrics.csv`  (one row/run;
-   area, cells, power, WNS/TNS, per-corner `period_min`/`fmax`, DRC/antenna).
-5. Timing review table: setup/hold clean at chosen clock per variant; record
-   achieved `period_min` (`nom_ss`) for each.
-6. Spot-check: GDS exists + one LVS/DRC re-confirmation from metrics.
-7. **Contingency:** if an unroll misses its clock (unexpected U8 > 100 ns),
-   re-bin that variant with margin and re-run; document it.
-
-Deliverable when done: one clean run per variant (`final/gds/sha_top.gds` +
-`metrics.json`) + `results/metrics.csv`.
+### U8 note (10/16/2026)
+U8 (grid100) failed at OpenROAD Global Routing with **GRT-0116 (congestion)**
+after reaching step 42. Attempts to resume from GlobalRouting did not complete.
+Given time and disk, results are reported for U1/U2/U4/U16 (4 usable Pareto
+points). The failed run dir was deleted 2026-10-16; the partial set still
+demonstrates the unrolling tradeoff (area increases, energy/hash drops,
+throughput scales sublinearly at very high unroll due to longer critical paths
+and the chosen hybrid clocking for U16).
 
 ---
 
-## Phase 3 — Energy + Pareto analysis ⬜ todo (5 steps)
+## Phase 3 — Energy + Pareto analysis ✅ (4 points)
 
-1. Throughput per variant at its clock: blocks/s = 1/(cycles_per_block × period);
-   also measured cycles/hash from cocotb (latency + pading/session overhead).
-2. Energy per hash: `power__total` (vectorless STA power at operating corner)
-   × time-per-hash; report W, J/hash, and (optional) energy-delay product.
-3. Document the power methodology (which corner/analysis, what it includes).
-4. Pareto plots (matplotlib, in notebook): **area vs throughput,
-   power vs throughput, energy per hash vs throughput**, all 5 UNROLL points
-   annotated; explain U16's diminishing returns (critical-path-limited).
-5. Save tables/plots into `results/` + `notebook/`.
-
----
-
-## Phase 4 — Notebook + reproducibility ⬜ todo (4 steps)
-
-1. Author `notebook/hashpareto.ipynb`: env pins → RTL generation → cocotb
-   verification gate → LibreLane runs (with graceful skip if outputs exist) →
-   metrics → Pareto analysis. All cells rerunnable in the pinned env.
-2. Make every step deterministic: fixed run tags, fixed period policy
-   (documented), pinned tool versions + hashes (from Phase 0).
-3. Export README-style summary; add `docs/` pointers from notebooks.
-4. Clean-room rerun pass on a fresh clone (best-effort; flag any manual bits).
+1. Throughput per variant at its clock: `blocks/s = UNROLL / 64 / period`.
+2. Energy per hash: `power__total` (vectorless STA power) × time-per-hash.
+3. Harvest: `python3 tools/collect_metrics.py` → `results/metrics.csv`
+   (one row per finished run).
+4. Pareto table `results/pareto.csv` + plots `results/pareto_*.png`
+   (area vs throughput, energy/hash vs throughput), 4 points annotated.
+5. Result summary:
+   | UNROLL | Area (µm²) | Throughput (Mhash/s) | Energy/hash (pJ) |
+   |-------:|-----------:|---------------------:|-----------------:|
+   | 1 | 176 750 | 0.16 | 16 184 |
+   | 2 | 197 497 | 0.31 | 8 211 |
+   | 4 | 243 908 | 0.62 | 4 176 |
+   | 16 | 524 671 | 0.83 | 1 099 |
 
 ---
 
-## Phase 5 — Submission 🔄/⬜ (4 steps)
+## Phase 4 — Notebook + reproducibility ✅ (draft)
+
+- `notebook/hashpareto.ipynb` created: env pins, verification summary,
+  metrics/Pareto tables, plots, U8 caveat, hybrid-clock rationale.
+- `tools/collect_metrics.py`, `tools/slim_run.sh`, `tools/run_variant.sh`,
+  `tools/run_grid.sh` make the flow rerunnable (fixed run tags, pinned env).
+
+Optional polish (not blocking): clean-room rerun on a fresh clone; fix the
+energy-plot label y-position (currently uses the column, not per-row value).
+
+---
+
+## Phase 5 — Submission ⬜ (4 steps)
 
 1. Re-verify license/compliance: Apache-2.0 for our work, `NOTICE` for vendored
    `nano_hash` + PDK/tool attributions.
 2. Audit against the Code-a-Chip rubric (reproducibility, clarity,
    open-sourcing, originality).
-3. Push `hash_pareto` repo public (GitHub) **after Phase 4 rerun**.
+3. Push `hash_pareto` repo public (GitHub).
 4. Open PR to `sscs-ose/sscs-ose-code-a-chip.github.io` under
    `ISSCC27/submitted_notebooks/<name>/` (deadline **2026-10-31**).
 
 ---
 
 ## Housekeeping / open threads
-- Not yet committed (all Phase 1–2 work): `docs/phase1_verification.md`,
-  `flow/`, `rtl/generated/`, `verif/`, `tools/*` (new .sh/.py), `results/`.
-  Phase 0/0.5 are committed (`5a3c864`, `1272ae9`).
-- Obsolete Oct-10 parallel-attempt artifacts were **deleted** (user-approved):
-  the split-core `rtl/generated/vN_*` set, `flow/verify`, `flow/runs/verify`,
-  stray `waveform.vcd`.
-- Disk: keep `tools/slim_run.sh` in the loop after every completed run.
-## U8 note (10/16/2026)
-U8 (grid100) failed at OpenROAD Global Routing with GRT-0116 (congestion) after reaching step 42. Attempts to resume from GlobalRouting did not complete. Given time and disk, results are reported for U1,U2,U4,U16 (4 usable Pareto points). The partial set still demonstrates the unrolling tradeoff (area increases, energy/hash drops, throughput scales sublinearly at very high unroll due to longer critical paths and the chosen hybrid clocking for U16).
+- Disk (2026-10-16 cleanup, user-approved): slimmed `u16/grid300`,
+  `u4/grid100`, `u2/grid100`, `u1/grid100`; deleted failed `u8/runs/grid100`
+  (1.3 GB) and the `u1/runs/run_u1` reference run (263 MB). `flow/` down
+  12 GB → 1.9 GB; C: free 13.9 GB → 21.7 GB. Keep `tools/slim_run.sh` in the
+  loop after every completed run.
+- Obsolete Oct-10 parallel-attempt artifacts were **deleted** earlier
+  (user-approved): split-core `rtl/generated/vN_*`, `flow/verify`,
+  `flow/runs/verify`, stray `waveform.vcd`.
+- Throwaway `tools/` scripts still to clean before submission:
+  `resume_u1.sh`, `inspect_run.sh`, `show_metrics.sh`, `show_timing.sh`,
+  `yosys_probe*.sh`, `_state_check.sh`, `_du_probe.sh`, `_metrics_probe.sh`
+  (if present).
