@@ -28,54 +28,47 @@ def md(*lines):
     return {"cell_type": "markdown", "id": _next_id(), "metadata": {}, "source": src}
 
 
-def code(*lines):
+def code(*lines, **metadata):
     src = [l + "\n" for l in lines[:-1]] + [lines[-1]]
+    meta = {"cellView": "form"}
+    meta.update(metadata)
     return {"cell_type": "code", "id": _next_id(), "execution_count": None,
-            "metadata": {}, "outputs": [], "source": src}
+            "metadata": meta, "outputs": [], "source": src}
 
 
 cells = [
     # ------------------------------------------------------------------ title
     md(
+        "<a href=\"https://colab.research.google.com/github/sscs-ose/sscs-ose-code-a-chip.github.io/blob/main/ISSCC27/submitted_notebooks/hashpareto/hashpareto.ipynb\" target=\"_parent\"><img src=\"https://colab.research.google.com/assets/colab-badge.svg\" alt=\"Open In Colab\"/></a>",
+        "",
         "# HashPareto — a notebook-driven PPA explorer for an open SHA-256 core",
         "",
-        "**IEEE SSCS Code-a-Chip travel-grant submission · ISSCC 2027 cycle**",
+        "```text",
+        "Copyright 2026 Benjamin Joshua Chimbuchi",
+        "SPDX-License-Identifier: Apache-2.0",
+        "```",
         "",
         "| Name | Affiliation | IEEE Member | SSCS Member | Email |",
         "|------|-------------|------------|-------------|-------|",
         "| Benjamin Joshua Chimbuchi | — | — | — | — |",
         "",
-        "This notebook documents *HashPareto*: taking a verified SystemVerilog",
-        "SHA-256 core, generating a family of architectural variants by",
-        "**round-unrolling** (`UNROLL` = 1, 2, 4, 8, 16), hardening each variant",
-        "through the fully open-source **LibreLane** RTL-to-GDS flow on the",
-        "**SkyWater SKY130** open PDK, and answering a practical question with",
-        "silicon data:",
+        "## Abstract",
         "",
-        "> *If you want a hardware SHA-256 accelerator and care about energy per",
-        "> hash and area, how much should you unroll?*",
+        "HashPareto parameterizes a verified SystemVerilog SHA-256 core by round unrolling (UNROLL = 1, 2, 4, 8, 16), hardens each variant through the fully open-source LibreLane RTL-to-GDS flow on the SkyWater SKY130 PDK, and reports throughput, area, and energy per hash with a Pareto analysis. Functional verification is bit-exact vs `hashlib.sha256` (25/25 PASS). Four of five variants are hardened (U8 blocked by routing congestion). Across hardened variants: U4 gives ~4× lower energy than U1 for +38% area (the knee); U16 reaches 1.10 nJ/hash at 300 ns. Results come from committed metrics and layout renders and are reproducible without commercial tools.",
         "",
-        "Everything here — RTL, verification, flow scripts, metrics, layouts, and",
-        "this notebook — is Apache-2.0 licensed and reproducible on a stock",
-        "Windows 11 + WSL2 machine with no Docker and no commercial tools.",
+        "**Contents:**",
         "",
-        "| | |",
-        "|---|---|",
-        "| **Design** | SHA-256, AXI-Stream byte ingress / 256-bit digest egress |",
-        "| **Variants** | UNROLL 1 / 2 / 4 / 8 / 16 (rounds per cycle) |",
-        "| **PDK** | SKY130A/B (open) |",
-        "| **Toolchain** | LibreLane 3.0.16 · Yosys 0.62 · OpenROAD · Magic · Netgen · KLayout · Verilator |",
-        "| **Hardened** | 4 of 5 variants (U8 blocked by routing congestion — see §7) |",
-        "| **Verified** | 25/25 cocotb tests bit-exact vs `hashlib.sha256` |",
-        "",
-        "**How to read this notebook.** §1 gives the environment and the exact",
-        "tool versions to use. §2–§4 explain the design, verification, and the",
-        "physical flow. §5–§6 load the measured data and draw the Pareto",
-        "conclusions — these cells run anywhere with `pandas` + `matplotlib` and",
-        "use only the small `data/` files committed alongside this notebook (the",
-        "multi-GB `flow/runs/` artifacts stay on the author's machine and are",
-        "regenerable). §7 lists limitations; §8 is the reproduce-from-scratch",
-        "guide; §9 lists reused work and references.",
+        "1. [Environment](#1-environment)",
+        "2. [Related work](#2-related-work)",
+        "3. [Design: one core, five variants](#3-the-design-one-core-five-variants)",
+        "4. [Functional verification: 25/25 bit-exact](#4-functional-verification-2525-bit-exact)",
+        "5. [Physical implementation: LibreLane on SKY130](#5-physical-implementation-librelane-on-sky130)",
+        "6. [Throughput and energy model](#6-throughput-and-energy-model)",
+        "7. [What the data says](#7-what-the-data-says)",
+        "8. [Conclusion](#8-conclusion)",
+        "9. [Limitations & future work](#9-limitations--future-work)",
+        "10. [How to reproduce everything](#10-how-to-reproduce-everything)",
+        "11. [References](#11-references)",
     ),
     # ------------------------------------------------------------------ env
     md(
