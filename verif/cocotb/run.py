@@ -6,11 +6,8 @@ from pathlib import Path
 from cocotb_tools.runner import get_runner
 
 ROOT = Path(
-    os.environ.get(
-        "HASHPARETO_ROOT",
-        "/mnt/c/Users/USER/Downloads/learning_verilog_and_sv/overagain/hash_pareto",
-    )
-)
+    os.environ.get("HASHPARETO_ROOT")
+) or Path(__file__).resolve().parents[2]
 
 SOURCES = [
     ROOT / "rtl/generated/sha_top.sv",

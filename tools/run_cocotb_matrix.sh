@@ -2,7 +2,7 @@
 set -e
 cd "$(dirname "$0")/.."
 ROOT=$(pwd)
-PY=/home/userchimbuchi/venv/bin/python
+PY="${HASHPARETO_PYTHON:-${PYTHON:-python3}}"
 
 for u in 1 2 4 8 16; do
     echo "==== UNROLL=$u ===="

@@ -6,7 +6,7 @@
 #
 set -euo pipefail
 
-ROOT="/mnt/c/Users/USER/Downloads/learning_verilog_and_sv/overagain/hash_pareto"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 UNROLL="${1:-1}"
 OUT="/tmp/hashpareto_top_u${UNROLL}.vvp"
 
@@ -18,4 +18,4 @@ iverilog -g2012 -o "$OUT" \
   "$ROOT/rtl/original/rtl/core/digest_buffer.sv" \
   "$ROOT/rtl/generated/tb/sha_top_seq_tb.sv"
 
-cd /tmp && vvp "$OUT"
+vvp "$OUT"

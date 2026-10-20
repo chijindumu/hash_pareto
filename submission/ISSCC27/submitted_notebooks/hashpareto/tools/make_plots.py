@@ -4,7 +4,8 @@
 Usage:
     ~/venv/bin/python tools/make_plots.py
 
-Inputs : results/pareto.csv  (unroll, area_um2, hashes_per_s, energy_per_hash_J, power_W)
+Inputs : results/pareto.csv  (populated by tools/make_pareto.py using *measured*
+         cycles from results/cycles.csv)
 Outputs : results/pareto_area_vs_throughput.png
           results/pareto_energy_vs_throughput.png
 """
@@ -26,8 +27,8 @@ with open(os.path.join(RES, "pareto.csv")) as f:
             {
                 "unroll": int(r["unroll"]),
                 "area_um2": float(r["area_um2"]),
-                "throughput_Mhash": float(r["hashes_per_s"]) / 1e6,
-                "energy_nJ": float(r["energy_per_hash_J"]) * 1e9,
+                "throughput_Mhash": float(r["throughput_Mhash_s"]) / 1e6,
+                "energy_nJ": float(r["energy_per_hash_nJ"]),
             }
         )
 rows.sort(key=lambda r: r["unroll"])
@@ -63,7 +64,7 @@ ax.scatter([r["throughput_Mhash"] for r in rows], [r["energy_nJ"] for r in rows]
            s=70, zorder=3)
 annotate(ax, lambda r: r["throughput_Mhash"], lambda r: r["energy_nJ"])
 ax.set_xlabel("Throughput (Mhash/s)")
-ax.set_ylabel("Energy per hash (nJ)")
+ax.set_ylabel("Energy per hash (nJ, vectorless STA estimate)")
 ax.set_title("HashPareto: energy/hash vs throughput (SKY130, 4 variants)")
 ax.grid(alpha=0.3)
 fig.tight_layout()

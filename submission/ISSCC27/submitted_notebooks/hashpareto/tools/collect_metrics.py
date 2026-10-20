@@ -26,6 +26,7 @@ TOP = {
     "power_switching_W": "power__switching__total",
     "leakage_W": "power__leakage__total",
     "setup_wns_ns": "timing__setup__wns",
+    "setup_ws_ns": "timing__setup__ws",
     "hold_wns_ns": "timing__hold__wns",
     "clock_skew_setup_ns": "clock__skew__worst_setup",
     "clock_skew_hold_ns": "clock__skew__worst_hold",
@@ -106,6 +107,27 @@ def main():
                 row[k] = "" if v is None else v
             for cn in ("nom_ss_100C_1v60", "nom_tt_025C_1v80"):
                 row["wns_" + cn.replace("C_1v", "_1v")] = d.get(PRE + cn, "")
+            # Per-corner worst setup slack (WS) -- survives slimming, unlike the
+            # sta.log files, and carries actual margin information (A5).
+            ws_all = {
+                k.split("__corner:")[1]: v
+                for k, v in d.items()
+                if k.startswith("timing__setup__ws__corner:")
+            }
+            if ws_all:
+                wc = min(ws_all, key=ws_all.get)
+                row["setup_ws_worst_ns"] = round(ws_all[wc], 4)
+                row["setup_ws_worst_corner"] = wc
+                for cn in ("nom_tt_025C_1v80", "nom_ss_100C_1v60"):
+                    if cn in ws_all:
+                        row["setup_ws_" + cn.replace("C_1v", "_1v")] = round(ws_all[cn], 4)
+                if period and (period - ws_all[wc]) > 0:
+                    row["fmax_est_worst_mhz"] = round(1000.0 / (period - ws_all[wc]), 2)
+                if period and "nom_tt_025C_1v80" in ws_all and (period - ws_all["nom_tt_025C_1v80"]) > 0:
+                    row["fmax_est_tt_mhz"] = round(1000.0 / (period - ws_all["nom_tt_025C_1v80"]), 2)
+            else:
+                row["setup_ws_worst_ns"] = ""
+                row["setup_ws_worst_corner"] = ""
             row["sta_period_min_nom_ss_ns"] = pm_ss if pm_ss is not None else ""
             row["sta_period_min_nom_tt_ns"] = pm_tt if pm_tt is not None else ""
             row["sta_fmax_nom_ss_mhz"] = fm_ss if fm_ss is not None else ""
@@ -113,6 +135,19 @@ def main():
             gds = glob.glob(os.path.join(run_dir, "final", "gds", "*.gds"))
             if gds:
                 row["gds_bytes"] = os.path.getsize(gds[0])
+            # A6: per-corner slew/cap/fanout so the notebook can disclose where
+            # they occur (LibreLane's own repair does not clear ss/ff extremes).
+            for kind in ("max_slew_violation", "max_cap_violation", "max_fanout_violation"):
+                per = {
+                    k.split("__corner:")[1]: v
+                    for k, v in d.items()
+                    if k.startswith(f"design__{kind}__count__corner:")
+                }
+                if per:
+                    mc = max(per, key=per.get)
+                    row[f"{kind}_worst_corner"] = mc
+                    row[f"{kind}_worst_val"] = per[mc]
+                    row[f"{kind}_nom_tt_val"] = per.get("nom_tt_025C_1v80", "")
             rows.append(row)
 
     for r in rows:

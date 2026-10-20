@@ -12,6 +12,11 @@ module sha256_core #(
 );
     localparam int NCHUNK = 64 / UNROLL;
 
+    initial begin
+        if (64 % UNROLL != 0)
+            $fatal(1, "sha256_core: UNROLL must divide 64 (got UNROLL=%0d)", UNROLL);
+    end
+
 
     function automatic logic [31:0] kconst(input int t);
         case (t)
