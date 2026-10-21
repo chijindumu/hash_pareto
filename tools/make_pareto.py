@@ -26,76 +26,36 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 def load(path):
+    """Return one row per unroll: prefer timing-closed (setup_ws_worst_ns >= 0),
+    else tightest clock. Deduplicates so each variant appears exactly once."""
     rows = {}
     with open(path) as f:
-        for r in csv.DictReader(f):
-            u = int(r["unroll"])
-            # For each variant, keep only the run with tightest (smallest) period
-            # that has been harvested, or the one with best slack
-            if u not in rows:
+        all_rows = list(csv.DictReader(f))
+    for r in all_rows:
+        u = int(r["unroll"])
+        ws = r.get("setup_ws_worst_ns", "")
+        try:
+            closed = float(ws) >= 0 if ws != "" else False
+        except:
+            closed = False
+        if u not in rows:
+            rows[u] = r
+            rows[u]["_closed"] = closed
+        else:
+            prev_closed = rows[u].get("_closed", False)
+            cur_p = float(r["clock_period_ns"])
+            best_p = float(rows[u]["clock_period_ns"])
+            # Prefer closed over open; among same closed-ness, tighter clock
+            if closed and not prev_closed:
                 rows[u] = r
-            else:
-                # Prefer tighter clock if both present
-                try:
-                    cur_p = float(r["clock_period_ns"])
-                    best_p = float(rows[u]["clock_period_ns"])
-                    if cur_p < best_p:
-                        rows[u] = r
-                except:
-                    pass
+                rows[u]["_closed"] = True
+            elif closed == prev_closed and cur_p < best_p:
+                rows[u] = r
+                rows[u]["_closed"] = closed
+    # strip helper key
+    for u in rows:
+        rows[u].pop("_closed", None)
     return rows
-
-
-def main():
-    met = load(os.path.join(ROOT, "results", "metrics.csv"))
-    cyc = load(os.path.join(ROOT, "results", "cycles.csv"))
-    rows = []
-    for u in sorted(met):
-        m = met[u]
-        c = cyc.get(u, {})
-        period = float(m["clock_period_ns"])          # ns
-        freq = 1e9 / period                            # Hz
-        pwr = float(m["power_W"])
-        cpb = float(c["cycles_per_block"])
-        model_cpb = 64.0 / u
-        row = {
-            "unroll": u,
-            "clock_period_ns": period,
-            "area_um2": float(m["area_stdcell_um2"]),
-            "cells": int(m["cells_stdcell"]),
-            "power_W": pwr,
-            "cycles_per_block": cpb,
-            "throughput_Mhash_s": freq / cpb / 1e6,
-            "energy_per_hash_nJ": pwr * cpb / freq * 1e9,
-            "model_cycles_per_block": model_cpb,
-            "model_throughput_Mhash_s": freq / model_cpb / 1e6,
-            "model_energy_per_hash_nJ": pwr * model_cpb / freq * 1e9,
-            "fmax_est_worst_mhz": m.get("fmax_est_worst_mhz", ""),
-            "fmax_est_tt_mhz": m.get("fmax_est_tt_mhz", ""),
-            "setup_ws_worst_ns": m.get("setup_ws_worst_ns", ""),
-            "setup_ws_worst_corner": m.get("setup_ws_worst_corner", ""),
-        }
-        rows.append(row)
-    rows.sort(key=lambda r: r["unroll"])
-
-    out = sys.argv[1] if len(sys.argv) > 1 else os.path.join(
-        ROOT, "results", "pareto.csv")
-    cols = list(rows[0].keys())
-    with open(out, "w", newline="") as f:
-        w = csv.DictWriter(f, fieldnames=cols)
-        w.writeheader()
-        w.writerows(rows)
-    for r in rows:
-        print("U{unroll:<2d} clk={clock_period_ns:>5}ns cpb={cycles_per_block:>5} "
-              "thr={throughput_Mhash_s:6.3f}M/s en={energy_per_hash_nJ:6.3f}nJ "
-              "(model thr={model_throughput_Mhash_s:6.3f} en={model_energy_per_hash_nJ:6.3f})"
-              .format(**r))
-    print("wrote", out)
-
-
-if __name__ == "__main__":
-    main()
-
 
 
 def main():
