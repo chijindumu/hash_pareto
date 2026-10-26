@@ -42,13 +42,16 @@ def find_data():
             d = base / name
             if (d / 'metrics.csv').exists():
                 return d
-    raise FileNotFoundError('metrics.csv not found in any data/ or results/ dir')
+    raise FileNotFoundError(
+        'metrics.csv not found in any data/ or results/ dir; '
+        f'searched {[str(base / name) for base in [Path.cwd(), *Path.cwd().parents] for name in ("data", "results")]}'
+    )
 
 
 cells = [
     # ------------------------------------------------------------------ colab badge
     md(
-        '<a href="https://colab.research.google.com/github/chijindumu/hash_pareto/blob/isscc27-submission/submission/ISSCC27/submitted_notebooks/hashpareto/hashpareto.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>',
+        '<a href="https://colab.research.google.com/github/chijindumu/hash_pareto/blob/master/notebook/hashpareto.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>',
         "",
         "**IEEE SSCS Code-a-Chip ISSCC 2027 · Submission notebook** ·",
         "Apache-2.0 · Runs top-to-bottom in Colab (Tier 0) or locally (Tiers 1–2).",
@@ -312,7 +315,7 @@ cells = [
     code(
         "# Display the four hardened layouts. Falls back gracefully if images absent.",
         "for u in (1, 2, 4, 16):",
-        "    p = Path('data/layouts') / f'u{u}.png'",
+        "    p = DATA / 'layouts' / f'u{u}.png'",
         "    if p.exists():",
         "        from IPython.display import Image, display",
         "        display(Image(filename=str(p), width=520))",
@@ -340,10 +343,10 @@ cells = [
         "from IPython.display import Image, display",
         "",
         "# Area vs throughput",
-        "display(Image(filename=str(Path('data') / 'pareto_area_vs_throughput.png'), width=600))",
+        "display(Image(filename=str(DATA / 'pareto_area_vs_throughput.png'), width=600))",
         "",
         "# Energy per hash vs throughput",
-        "display(Image(filename=str(Path('data') / 'pareto_energy_vs_throughput.png'), width=600))",
+        "display(Image(filename=str(DATA / 'pareto_energy_vs_throughput.png'), width=600))",
     ),
     md(
         "**Figure A2 — Pareto curves (area vs throughput, energy vs throughput).** "
@@ -449,7 +452,7 @@ cells = [
         "and updates the Pareto table.",
         "",
         "- **Tier 2 (opt‑in full flow):** Run `tools/reharden.sh` to harden U1 end-to-end "
-        "via LibreLane.  This produces `data/layouts/*.png`, `data/metrics.csv", and "
+        "via LibreLane.  This produces `data/layouts/*.png`, `data/metrics.csv`, and "
         "updates the Pareto with timing-closed data.  Runtime ≈ 40–90 min per variant.",
     ),
     # ------------------------------------------------------------------ references
