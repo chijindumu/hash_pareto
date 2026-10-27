@@ -35,16 +35,20 @@ def code(*lines, **metadata):
 
 def find_data():
     """Locate the small metrics dir: data/ (submission) or results/ (dev repo).
-    Searches the CWD and all its parents so the notebook works whether it is
-    opened at the package root, in notebook/, or from any subdirectory."""
-    for base in [Path.cwd(), *Path.cwd().parents]:
+    Searches the CWD, its parents, and common Colab child dirs so the notebook
+    works whether opened at the package root, in notebook/, or from /content
+    (Colab clones the repo to /content/<repo>/)."""
+    bases = [Path.cwd(), *Path.cwd().parents]
+    # Colab clones GitHub repos to /content/<reponame>/ while CWD stays /content.
+    bases.append(Path.cwd() / 'hash_pareto')
+    for base in bases:
         for name in ('data', 'results'):
             d = base / name
             if (d / 'metrics.csv').exists():
                 return d
     raise FileNotFoundError(
         'metrics.csv not found in any data/ or results/ dir; '
-        f'searched {[str(base / name) for base in [Path.cwd(), *Path.cwd().parents] for name in ("data", "results")]}'
+        f'searched {[str(base / name) for base in bases for name in ("data", "results")]}'
     )
 
 
